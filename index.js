@@ -23,8 +23,19 @@ async function run() {
 
     await client.connect();
     const db = client.db('DocAppointServer')
+    const dbs = client.db('DocAppointClient')
     const dataCollection = db.collection('appointmentCollection')
     const doctorDataCollection = db.collection('doctorData')
+    const userDataCollection = dbs.collection('user')
+
+    app.patch('/updateUserData/:id', async(req, res) => {
+      const {id} = req.params
+      const filter = {_id: new ObjectId(id)}
+      const updateDoc = { $set: req.body }
+      const result = await userDataCollection.updateOne(filter, updateDoc)
+      res.json(result)
+      console.log(result)
+    })
 
     app.post('/addPatientData', async (req, res) => {
       const data = req.body
