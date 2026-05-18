@@ -2,7 +2,7 @@ const express = require('express')
 const app = express()
 require('dotenv').config()
 const cors = require('cors')
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = process.env.MONGODB_URI;
 const port = process.env.PORT
 
@@ -39,13 +39,28 @@ async function run() {
     })
     app.get('/getDoctorData/:id', async (req, res) => {
       const id = req.params.id
-      const query = {id}
+      const query = { id }
       const result = await doctorDataCollection.findOne(query)
       res.json(result)
     })
 
     app.get('/getPatientData', async (req, res) => {
       const result = await dataCollection.find().toArray()
+      res.json(result)
+    })
+
+    app.patch('/getPatientData/:id', async (req, res) => {
+      const {id} = req.params
+      const filter = { _id: new ObjectId(id) }
+      const updateDoc = { $set: req.body }
+      const result = await dataCollection.updateOne(filter, updateDoc)
+      res.json(result)
+    })
+
+    app.delete('/getPatientData/:id', async (req, res) => {
+      const {id} = req.params
+      const query = { _id: new ObjectId(id) }
+      const result = await dataCollection.deleteOne(query)
       res.json(result)
     })
 
