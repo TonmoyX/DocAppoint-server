@@ -24,7 +24,14 @@ async function run() {
     await client.connect();
     const db = client.db('DocAppointServer')
     const dataCollection = db.collection('appointmentCollection')
-    
+
+    app.post('/addPatientData', async (req, res) => {
+      const data = req.body
+      // console.log(data)
+      const result = await dataCollection.insertOne(data)
+      res.json(result)
+    })
+
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
