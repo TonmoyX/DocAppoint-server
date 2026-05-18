@@ -33,7 +33,7 @@ async function run() {
       res.json(result)
     })
 
-    app.get('/getDoctorData', async (req, res) => {
+    app.get('/getDoctorData',  async (req, res) => {
       const result = await doctorDataCollection.find().toArray()
       res.json(result)
     })
