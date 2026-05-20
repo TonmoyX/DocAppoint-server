@@ -3,6 +3,7 @@ const app = express()
 require('dotenv').config()
 const cors = require('cors')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { createRemoteJWKSet, jwtVerify } = require('jose-cjs');
 const uri = process.env.MONGODB_URI;
 const port = process.env.PORT
 
@@ -18,17 +19,39 @@ const client = new MongoClient(uri, {
   }
 });
 
+const JWKS = createRemoteJWKSet(
+  new URL("https://docappoint-snowy.vercel.app/api/auth/jwks")
+)
+
+const verifyToke = async (req, res, next) => {
+     const authHeader = req?.headers.authorization
+     const token = authHeader?.split(' ')[1]
+     if(!authHeader || !token){
+        return res.status(401).json({message: 'Unauthorized access'})
+     }
+     
+     try{
+      const {payload} = await jwtVerify(token, JWKS)
+      next()
+     }
+     catch(error){
+        return res.status(403).json({message: 'Forbidden access'})}
+}
+
+
+
+
 async function run() {
   try {
 
-    await client.connect();
+    // await client.connect();
     const db = client.db('DocAppointServer')
     const dbs = client.db('DocAppointClient')
     const dataCollection = db.collection('appointmentCollection')
     const doctorDataCollection = db.collection('doctorData')
     const userDataCollection = dbs.collection('user')
 
-    app.patch('/updateUserData/:id', async(req, res) => {
+    app.patch('/updateUserData/:id',verifyToke, async(req, res) => {
       const {id} = req.params
       const filter = {_id: new ObjectId(id)}
       const updateDoc = { $set: req.body }
@@ -48,7 +71,7 @@ async function run() {
       const result = await doctorDataCollection.find().toArray()
       res.json(result)
     })
-    app.get('/getDoctorData/:id', async (req, res) => {
+    app.get('/getDoctorData/:id',verifyToke, async (req, res) => {
       const id = req.params.id
       const query = { id }
       const result = await doctorDataCollection.findOne(query)
@@ -75,8 +98,8 @@ async function run() {
       res.json(result)
     })
 
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // await client.close();
   }
